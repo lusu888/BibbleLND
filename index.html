@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Strumento di Lettura della Bibbia</title>
+<style>
+    body { font-family: Arial, sans-serif; background-color: #f4f4f4; }
+    #container { width: 80%; margin: auto; }
+    h1 { color: #333; text-align: center; }
+    select, button { padding: 10px; font-size: 16px; margin: 5px; }
+    .verse { margin: 5px 0; }
+</style>
+</head>
+<body>
+
+<div id="container">
+    <h1>Strumento di Lettura della Bibbia</h1>
+    <label for="book">Seleziona il Libro:</label>
+    <select id="book" onchange="populateChapters()" disabled></select>
+    
+    <label for="chapter">Seleziona il Capitolo:</label>
+    <select id="chapter" disabled></select>
+    
+    <button onclick="displayVerses()" disabled>Mostra Versetti</button>
+
+    <div id="verses"></div>
+</div>
+
+<script>
+    let xmlDoc;
+    const bookNames = {
+        "1": "Genesi",
+        "2": "Esodo",
+        "3": "Levitico",
+        "4": "Numeri",
+        "5": "Deuteronomio",
+        "6": "Giosuè",
+        "7": "Giudici",
+        "8": "Rut",
+        "9": "1 Samuele",
+        "10": "2 Samuele",
+        "11": "1 Re",
+        "12": "2 Re",
+        "13": "1 Cronache",
+        "14": "2 Cronache",
+        "15": "Esdra",
+        "16": "Neemia",
+        "17": "Ester",
+        "18": "Giobbe",
+        "19": "Salmi",
+        "20": "Proverbi",
+        "21": "Ecclesiaste",
+        "22": "Cantico dei Cantici",
+        "23": "Isaia",
+        "24": "Geremia",
+        "25": "Lamentazioni",
+        "26": "Ezechiele",
+        "27": "Daniele",
+        "28": "Osea",
+        "29": "Gioele",
+        "30": "Amos",
+        "31": "Abdia",
+        "32": "Giona",
+        "33": "Michea",
+        "34": "Naum",
+        "35": "Abacuc",
+        "36": "Sofonia",
+        "37": "Aggeo",
+        "38": "Zaccaria",
+        "39": "Malachia",
+        "40": "Matteo",
+        "41": "Marco",
+        "42": "Luca",
+        "43": "Giovanni",
+        "44": "Atti",
+        "45": "Romani",
+        "46": "1 Corinzi",
+        "47": "2 Corinzi",
+        "48": "Galati",
+        "49": "Efesini",
+        "50": "Filippesi",
+        "51": "Colossesi",
+        "52": "1 Tessalonicesi",
+        "53": "2 Tessalonicesi",
+        "54": "1 Timoteo",
+        "55": "2 Timoteo",
+        "56": "Tito",
+        "57": "Filemone",
+        "58": "Ebrei",
+        "59": "Giacomo",
+        "60": "1 Pietro",
+        "61": "2 Pietro",
+        "62": "1 Giovanni",
+        "63": "2 Giovanni",
+        "64": "3 Giovanni",
+        "65": "Giuda",
+        "66": "Apocalisse"
+    };
+
+    const bookSelect = document.getElementById('book');
+    const chapterSelect = document.getElementById('chapter');
+    const versesDiv = document.getElementById('verses');
+
+    // Carica il file XML dalla posizione locale e sostituisce i caratteri speciali
+    fetch("SF_2009-01-20_ITA_LND_1991_(LA NUOVA DIODATI 1991).xml")
+        .then(response => response.text())
+        .then(xmlText => {
+            // Sostituisci caratteri speciali, come il carattere di apostrofo singolo italiano
+            xmlText = xmlText.replace(//g, "’");
+            const parser = new DOMParser();
+            xmlDoc = parser.parseFromString(xmlText, "text/xml");
+            populateBooks();
+            bookSelect.disabled = false;
+            chapterSelect.disabled = false;
+            document.querySelector("button").disabled = false;
+        })
+        .catch(error => {
+            console.error("Errore nel caricamento del file XML:", error);
+        });
+
+    function populateBooks() {
+        bookSelect.innerHTML = '<option>Seleziona un libro</option>';
+        const books = xmlDoc.getElementsByTagName("BIBLEBOOK");
+        Array.from(books).forEach(book => {
+            const bookNumber = book.getAttribute("bnumber");
+            const bookName = bookNames[bookNumber] || `Libro ${bookNumber}`;
+            const option = document.createElement("option");
+            option.value = bookNumber;
+            option.text = bookName;
+            bookSelect.appendChild(option);
+        });
+    }
+
+    function populateChapters() {
+        chapterSelect.innerHTML = '';  // Cancella capitoli precedenti
+        const bookNumber = bookSelect.value;
+        const chapters = xmlDoc.querySelectorAll(`BIBLEBOOK[bnumber='${bookNumber}'] CHAPTER`);
+        
+        Array.from(chapters).forEach(chapter => {
+            const option = document.createElement("option");
+            option.value = chapter.getAttribute("cnumber");
+            option.text = "Capitolo " + chapter.getAttribute("cnumber");
+            chapterSelect.appendChild(option);
+        });
+    }
+
+    function displayVerses() {
+        versesDiv.innerHTML = '';  // Cancella versetti precedenti
+        const bookNumber = bookSelect.value;
+        const chapterNumber = chapterSelect.value;
+        const verses = xmlDoc.querySelectorAll(`BIBLEBOOK[bnumber='${bookNumber}'] CHAPTER[cnumber='${chapterNumber}'] VERS`);
+        
+        Array.from(verses).forEach(verse => {
+            const verseText = document.createElement("div");
+            verseText.classList.add("verse");
+            verseText.textContent = `${verse.getAttribute("vnumber")}. ${verse.textContent}`;
+            versesDiv.appendChild(verseText);
+        });
+    }
+</script>
+
+</body>
+</html>
