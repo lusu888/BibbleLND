@@ -2,28 +2,48 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Strumento di Lettura della Bibbia</title>
 <style>
-    body { font-family: Arial, sans-serif; background-color: #f4f4f4; }
-    #container { width: 80%; margin: auto; }
-    h1 { color: #333; text-align: center; }
-    select, button { padding: 10px; font-size: 16px; margin: 5px; }
-    .verse { margin: 5px 0; }
+    body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }
+    #container { width: 90%; max-width: 2000px; margin: auto; padding: 20px; }
+    h1 { color: #333; text-align: center; font-size: 2em; margin-bottom: 20px; }
+    .controls { display: flex; flex-direction: column; gap: 10px; }
+    label, select, button, input[type="range"] { padding: 10px; font-size: 1em; margin: 5px 0; box-sizing: border-box; }
+    #fontSizeValue { display: inline-block; padding-left: 10px; }
+    .verse { margin: 8px 0; font-size: inherit; }
+    button { width: auto; }
+    input[type="range"] { width: 80%; }
+    
+    /* Responsive layout for wider screens */
+    @media (min-width: 700px) {
+        .controls { flex-direction: row; align-items: center; gap: 10px; }
+        label, select, button, input[type="range"] { font-size: 1.1em; }
+        h1 { font-size: 2.2em; }
+    }
 </style>
 </head>
 <body>
 
 <div id="container">
     <h1>Strumento di Lettura della Bibbia</h1>
-    <label for="book">Seleziona il Libro:</label>
-    <select id="book" onchange="populateChapters()" disabled></select>
     
-    <label for="chapter">Seleziona il Capitolo:</label>
-    <select id="chapter" disabled></select>
+    <div class="controls">
+        <label for="book">Seleziona il Libro:</label>
+        <select id="book" onchange="populateChapters()" disabled></select>
+        
+        <label for="chapter">Seleziona il Capitolo:</label>
+        <select id="chapter" disabled></select>
+        
+        <button onclick="displayVerses()" disabled>Mostra Versetti</button>
+    </div>
     
-    <button onclick="displayVerses()" disabled>Mostra Versetti</button>
+    <br><br>
+    <label for="fontSize">Dimensione del testo:</label>
+    <input type="range" id="fontSize" min="12" max="48" value="16" oninput="adjustFontSize(this.value)" />
+    <span id="fontSizeValue">16px</span>
 
-    <div id="verses"></div>
+    <div id="verses" style="font-size: 16px;"></div>
 </div>
 
 <script>
@@ -100,12 +120,12 @@
     const bookSelect = document.getElementById('book');
     const chapterSelect = document.getElementById('chapter');
     const versesDiv = document.getElementById('verses');
+    const fontSizeValue = document.getElementById('fontSizeValue');
 
     // Carica il file XML dalla posizione locale e sostituisce i caratteri speciali
     fetch("SF_2009-01-20_ITA_LND_1991_(LA NUOVA DIODATI 1991).xml")
         .then(response => response.text())
         .then(xmlText => {
-            // Sostituisci caratteri speciali, come il carattere di apostrofo singolo italiano
             xmlText = xmlText.replace(//g, "’");
             const parser = new DOMParser();
             xmlDoc = parser.parseFromString(xmlText, "text/xml");
@@ -156,6 +176,12 @@
             verseText.textContent = `${verse.getAttribute("vnumber")}. ${verse.textContent}`;
             versesDiv.appendChild(verseText);
         });
+    }
+
+    // Funzione per regolare la dimensione del carattere
+    function adjustFontSize(size) {
+        versesDiv.style.fontSize = size + "px";
+        fontSizeValue.textContent = size + "px";
     }
 </script>
 
