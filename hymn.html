@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hymn Projector with Editing</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .btn {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn-primary {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .btn-secondary {
+            background-color: #2196F3;
+            color: white;
+        }
+        .btn-danger {
+            background-color: #f44336;
+            color: white;
+        }
+        .btn-export {
+            background-color: #607d8b;
+            color: white;
+        }
+        .search-container {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        #search-input {
+            flex: 1;
+            padding: 10px;
+            font-size: 16px;
+        }
+        .hymn-list {
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            padding: 15px;
+            margin-bottom: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .hymn-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .hymn-item:hover {
+            background-color: #f0f0f0;
+        }
+        .hymn-actions {
+            display: flex;
+            gap: 5px;
+        }
+        .hymn-actions button {
+            padding: 5px 8px;
+            font-size: 12px;
+        }
+        .hymn-display {
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            padding: 20px;
+            min-height: 300px;
+        }
+        .hymn-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+            text-align: left;
+        }
+        .hymn-number {
+            font-size: 18px;
+            color: #666;
+            text-align: left;
+            margin-bottom: 20px;
+        }
+        .hymn-content {
+            font-size: 28px;
+            line-height: 1.5;
+            white-space: pre-line;
+            text-align: left;
+            overflow-wrap: anywhere;
+        }
+        .slider-container {
+            margin: 20px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        #font-size-slider {
+            flex: 1;
+        }
+        .edit-form {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-top: 20px;
+            display: none;
+        }
+        .edit-form h2 {
+            margin-top: 0;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-control {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        textarea.form-control {
+            min-height: 200px;
+            font-family: inherit;
+        }
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        .error-message {
+            color: #d32f2f;
+            background-color: #ffebee;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Hymn Projector with Editing</h1>
+        
+        <div id="error-container" class="error-message"></div>
+        
+        <div class="button-group">
+            <button id="add-hymn" class="btn btn-secondary">Add New Hymn</button>
+            <button id="export-json" class="btn btn-export">Export to JSON</button>
+        </div>
+        
+        <div class="search-container">
+            <input type="text" id="search-input" placeholder="Search hymns by title, number or lyrics...">
+            <button id="search-button" class="btn btn-primary">Search</button>
+        </div>
+        
+        <div class="hymn-list" id="hymn-list">
+            <!-- Hymn list will be populated by JavaScript -->
+        </div>
+        
+        <div class="slider-container">
+            <span>Font Size:</span>
+            <input type="range" min="16" max="72" value="28" id="font-size-slider">
+            <span id="font-size-value">28px</span>
+        </div>
+        
+        <div class="hymn-display" id="hymn-display">
+            <div class="hymn-title" id="hymn-title">Select a hymn to display</div>
+            <div class="hymn-number" id="hymn-number"></div>
+            <div class="hymn-content" id="hymn-content"></div>
+        </div>
+        
+        <div id="edit-form" class="edit-form">
+            <h2 id="form-title">Edit Hymn</h2>
+            <form id="hymn-form">
+                <input type="hidden" id="edit-hymn-id">
+                <div class="form-group">
+                    <label for="edit-hymn-number">Number:</label>
+                    <input type="number" id="edit-hymn-number" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-hymn-title">Title:</label>
+                    <input type="text" id="edit-hymn-title" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-hymn-content">Content:</label>
+                    <textarea id="edit-hymn-content" class="form-control" required></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" id="cancel-edit" class="btn btn-danger">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Load hymns from JSON file
+        let hymns = [];
+        let currentHymn = null;
+        const errorContainer = document.getElementById('error-container');
+
+        // Show error message
+        function showError(message) {
+            errorContainer.textContent = message;
+            errorContainer.style.display = 'block';
+            console.error(message);
+        }
+
+        // Hide error message
+        function hideError() {
+            errorContainer.style.display = 'none';
+        }
+
+        // Load hymns data
+        function loadHymns() {
+            const possibleFilenames = [
+                'hymns.json',
+                'hymns (3).json',
+                'hymns3.json',
+                'hymns_data.json'
+            ];
+            
+            let attempts = 0;
+            
+            function tryLoad(index) {
+                if (index >= possibleFilenames.length) {
+                    showError('Could not load hymns data. Please ensure the JSON file exists in the same folder as this HTML file.');
+                    return;
+                }
+                
+                const filename = possibleFilenames[index];
+                fetch(filename)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        hymns = data;
+                        // Add unique IDs if not present
+                        hymns.forEach((hymn, index) => {
+                            if (!hymn.id) hymn.id = index + 1;
+                        });
+                        hideError();
+                        populateHymnList();
+                        if (hymns.length > 0) {
+                            displayHymn(hymns[0]);
+                        }
+                    })
+                    .catch(error => {
+                        attempts++;
+                        console.log(`Attempt ${attempts} failed for ${filename}:`, error);
+                        tryLoad(index + 1);
+                    });
+            }
+            
+            tryLoad(0);
+        }
+
+        // Populate the hymn list with search functionality
+        function populateHymnList(filter = '') {
+            const hymnList = document.getElementById('hymn-list');
+            hymnList.innerHTML = '';
+            
+            if (!hymns || hymns.length === 0) {
+                hymnList.innerHTML = '<div class="hymn-item">No hymns available.</div>';
+                return;
+            }
+            
+            const filteredHymns = hymns.filter(hymn => 
+                hymn.title.toLowerCase().includes(filter.toLowerCase()) || 
+                hymn.number.toString().includes(filter) ||
+                (hymn.content && hymn.content.toLowerCase().includes(filter.toLowerCase()))
+            );
+            
+            if (filteredHymns.length === 0) {
+                hymnList.innerHTML = '<div class="hymn-item">No hymns found matching your search.</div>';
+                return;
+            }
+            
+            filteredHymns.forEach(hymn => {
+                const hymnItem = document.createElement('div');
+                hymnItem.className = 'hymn-item';
+                
+                const hymnInfo = document.createElement('div');
+                hymnInfo.textContent = `${hymn.number}. ${hymn.title}`;
+                
+                const actions = document.createElement('div');
+                actions.className = 'hymn-actions';
+                
+                const editBtn = document.createElement('button');
+                editBtn.className = 'btn btn-primary';
+                editBtn.textContent = 'Edit';
+                editBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    showEditForm(hymn);
+                });
+                
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'btn btn-danger';
+                deleteBtn.textContent = 'Delete';
+                deleteBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (confirm(`Are you sure you want to delete "${hymn.title}"?`)) {
+                        deleteHymn(hymn);
+                    }
+                });
+                
+                actions.appendChild(editBtn);
+                actions.appendChild(deleteBtn);
+                
+                hymnItem.appendChild(hymnInfo);
+                hymnItem.appendChild(actions);
+                
+                hymnItem.addEventListener('click', () => displayHymn(hymn));
+                hymnList.appendChild(hymnItem);
+            });
+        }
+
+        // Display selected hymn
+        function displayHymn(hymn) {
+            currentHymn = hymn;
+            document.getElementById('hymn-title').textContent = hymn.title;
+            document.getElementById('hymn-number').textContent = `Hymn #${hymn.number}`;
+            document.getElementById('hymn-content').textContent = hymn.content;
+            updateFontSize();
+        }
+
+        // Update font size based on slider
+        function updateFontSize() {
+            const fontSize = document.getElementById('font-size-slider').value;
+            document.getElementById('hymn-content').style.fontSize = fontSize + 'px';
+            document.getElementById('font-size-value').textContent = fontSize + 'px';
+        }
+
+        // Show edit form
+        function showEditForm(hymn = null) {
+            const formContainer = document.getElementById('edit-form');
+            const formTitle = document.getElementById('form-title');
+            
+            if (hymn) {
+                // Edit existing hymn
+                formTitle.textContent = 'Edit Hymn';
+                document.getElementById('edit-hymn-id').value = hymn.id;
+                document.getElementById('edit-hymn-number').value = hymn.number;
+                document.getElementById('edit-hymn-title').value = hymn.title;
+                document.getElementById('edit-hymn-content').value = hymn.content;
+            } else {
+                // Add new hymn
+                formTitle.textContent = 'Add New Hymn';
+                document.getElementById('edit-hymn-id').value = '';
+                document.getElementById('edit-hymn-number').value = '';
+                document.getElementById('edit-hymn-title').value = '';
+                document.getElementById('edit-hymn-content').value = '';
+            }
+            
+            formContainer.style.display = 'block';
+            window.scrollTo(0, document.body.scrollHeight);
+        }
+
+        // Hide edit form
+        function hideEditForm() {
+            document.getElementById('edit-form').style.display = 'none';
+        }
+
+        // Save hymn (edit or add new)
+        function saveHymn(event) {
+            event.preventDefault();
+            
+            const id = document.getElementById('edit-hymn-id').value;
+            const number = parseInt(document.getElementById('edit-hymn-number').value);
+            const title = document.getElementById('edit-hymn-title').value.trim();
+            const content = document.getElementById('edit-hymn-content').value.trim();
+            
+            if (!number || !title || !content) {
+                alert('Please fill in all fields');
+                return;
+            }
+            
+            if (id) {
+                // Update existing hymn
+                const index = hymns.findIndex(h => h.id == id);
+                if (index !== -1) {
+                    hymns[index] = { ...hymns[index], number, title, content };
+                }
+            } else {
+                // Add new hymn
+                const newId = hymns.length > 0 ? Math.max(...hymns.map(h => h.id)) + 1 : 1;
+                hymns.push({ id: newId, number, title, content });
+            }
+            
+            populateHymnList();
+            hideEditForm();
+            
+            // Display the newly saved hymn
+            const savedHymn = id ? hymns.find(h => h.id == id) : hymns[hymns.length - 1];
+            displayHymn(savedHymn);
+        }
+
+        // Delete hymn
+        function deleteHymn(hymn) {
+            hymns = hymns.filter(h => h.id !== hymn.id);
+            populateHymnList();
+            
+            // If we deleted the currently displayed hymn, clear the display
+            if (currentHymn && currentHymn.id === hymn.id) {
+                document.getElementById('hymn-title').textContent = 'Select a hymn to display';
+                document.getElementById('hymn-number').textContent = '';
+                document.getElementById('hymn-content').textContent = '';
+                currentHymn = null;
+            }
+        }
+
+        // Export hymns to JSON file
+        function exportToJson() {
+            const dataStr = JSON.stringify(hymns, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            
+            // Create download link
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(dataBlob);
+            a.download = 'hymns_updated.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            
+            // Show success message
+            alert('Hymn data has been exported to hymns_updated.json\n\n' +
+                  'Please save this file to replace your original JSON file.');
+        }
+
+        // Event listeners
+        document.getElementById('search-button').addEventListener('click', () => {
+            const searchTerm = document.getElementById('search-input').value;
+            populateHymnList(searchTerm);
+        });
+
+        document.getElementById('search-input').addEventListener('keyup', (e) => {
+            if (e.key === 'Enter') {
+                const searchTerm = document.getElementById('search-input').value;
+                populateHymnList(searchTerm);
+            }
+        });
+
+        document.getElementById('font-size-slider').addEventListener('input', updateFontSize);
+
+        document.getElementById('add-hymn').addEventListener('click', () => {
+            showEditForm();
+        });
+
+        document.getElementById('export-json').addEventListener('click', exportToJson);
+
+        document.getElementById('cancel-edit').addEventListener('click', hideEditForm);
+
+        document.getElementById('hymn-form').addEventListener('submit', saveHymn);
+
+        // Load hymns when page loads
+        window.addEventListener('load', loadHymns);
+    </script>
+</body>
+</html>
